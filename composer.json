@@ -1,0 +1,37 @@
+{
+    "name": "lemukarram/vector-search",
+    "description": "A powerful, driver-based RAG (Retrieval-Augmented Generation) package for Laravel. Automatically sync Eloquent models to a vector database and get AI-powered answers.",
+    "version": "1.0.0",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mukarram Hussain",
+            "email": "your-email@example.com",
+            "homepage": "https://github.com/lemukarram",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.1|^8.2",
+        "illuminate/support": "^8.0|^9.0|^10.0|^11.0|^12.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LeMukarram\\VectorSearch\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LeMukarram\\VectorSearch\\VectorSearchServiceProvider"
+            ],
+            "aliases": {
+                "VectorSearch": "LeMukarram\\VectorSearch\\Facades\\VectorSearch"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
