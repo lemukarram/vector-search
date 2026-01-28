@@ -31,7 +31,8 @@ class GeminiDriver implements AiChatDriver, AiEmbeddingDriver
             'json' => [
                 'content' => [
                     'parts' => [['text' => $text]]
-                ]
+                ],
+                'outputDimensionality' => 768,
             ],
         ]);
         $data = json_decode($response->getBody()->getContents(), true);
