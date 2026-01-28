@@ -70,7 +70,7 @@ return [
         'gemini' => [
             'driver'          => 'gemini',
             'api_key'         => env('GEMINI_API_KEY'),
-            'embedding_model' => 'text-embedding-004',
+            'embedding_model' => 'text-embedding-001',
             'chat_model'      => 'gemini-1.5-flash',
         ],
         'deepseek' => [
