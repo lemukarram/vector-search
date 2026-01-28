@@ -35,7 +35,7 @@ Before you start, you must understand **Dimensions**. Different AI models output
 | AI Provider | Model Name | Dimension Size |
 | :--- | :--- | :--- |
 | **OpenAI** | `text-embedding-3-small` | **1536** |
-| **Gemini** | `text-embedding-004` | **768** |
+| **Gemini** | `gemini-embedding-001` | **768** |
 | **DeepSeek** | `deepseek-embedder` | **1024** (Check docs) |
 
 **Crucial:** If you create an Upstash index with 1536 dimensions for OpenAI, and then switch your `.env` to use Gemini (768), **it will fail**. You must create a separate index for each model type.
