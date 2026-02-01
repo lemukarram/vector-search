@@ -71,7 +71,7 @@ return [
             'driver'          => 'gemini',
             'api_key'         => env('GEMINI_API_KEY'),
             'embedding_model' => 'gemini-embedding-001',
-            'chat_model'      => 'gemini-1.5-flash',
+            'chat_model'      => 'gemini-2.5-flash',
         ],
         'deepseek' => [
             'driver'          => 'deepseek',
