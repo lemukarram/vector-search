@@ -1,181 +1,183 @@
+# Laravel Vector Search & RAG (Retrieval-Augmented Generation)
 
-# Laravel Vector Search (RAG)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/lemukarram/vector-search.svg?style=flat-square)](https://packagist.org/packages/lemukarram/vector-search)
+[![Total Downloads](https://img.shields.io/packagist/dt/lemukarram/vector-search.svg?style=flat-square)](https://packagist.org/packages/lemukarram/vector-search)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/lemukarram/laravel-vector-search-RAG/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/lemukarram/laravel-vector-search-RAG/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Author](https://img.shields.io/badge/Author-Tech%20with%20muk-red.svg)](https://github.com/lemukarram)
-
-A powerful, driver-based RAG (Retrieval-Augmented Generation) package for Laravel. Give your Eloquent models a "long-term memory" and build powerful, context-aware AI chatbots in minutes.
-
-Developed by **[Mukarram Hussain](https://github.com/lemukarram)** of **Tech with muk**.
+**Laravel Vector Search** is a powerful, driver-based RAG (Retrieval-Augmented Generation) package designed to give your Eloquent models "long-term memory." It enables seamless semantic search and AI-powered chat capabilities by automatically syncing your database with industry-leading vector stores and LLMs.
 
 ---
 
-## The Concept
+## 🚀 Key Features
 
-This package makes Retrieval-Augmented Generation (RAG) dead simple.
+- **🧠 Eloquent Auto-Sync:** Automatically vectorize and sync models (`Post`, `Product`, `User`, etc.) on save and delete.
+- **⚡ Async Background Processing:** High-performance vector synchronization using Laravel Queues (never blocks your users).
+- **🔎 Semantic Search:** Go beyond keyword matching with high-accuracy similarity search via `VectorSearch::similar()`.
+- **🤖 Native RAG Support:** Build context-aware chatbots in seconds using `VectorSearch::chat()`.
+- **🚀 Built-in Caching:** Blazing fast performance with configurable caching for embeddings and AI responses.
+- **🛠️ Driver-Based Architecture:**
+    - **Vector Stores:** Upstash, ChromaDB, and Pinecone.
+    - **AI Models:** OpenAI (GPT-5), Google Gemini (3.1 Flash-Lite), and DeepSeek.
 
-1.  **Sync:** You add a simple `VectorSearchable` trait to your `Post`, `Product`, or `User` models.
-2.  **Magic:** The package automatically syncs your model data with a vector database (like Upstash, Chroma, or Pinecone) every time a model is `saved` or `deleted`.
-3.  **Search:** Use `VectorSearch::similar()` to find Eloquent models that are semantically similar to a user's query.
-4.  **Chat:** Use `VectorSearch::chat()` to get a direct answer from an AI (like Gemini, OpenAI, or DeepSeek) that uses your model data as its *only* context.
+---
 
-## Features
+## 📦 Installation
 
-- 🧠 **Eloquent Auto-Sync:** Just add a Trait to your models.
-- 🚀 **Driver-Based Architecture:**
-    - **Vector Stores:** Upstash, Chroma, and Pinecone (fully extensible).
-    - **AI Models:** OpenAI, Gemini, and DeepSeek (fully extensible).
-- 📈 **RAG Out-of-the-Box:** A simple `VectorSearch::chat()` method provides full RAG.
-- ✨ **Clean Facade:** A powerful, simple API.
+Install the package via composer:
 
-## ⚠️ Important: Vector Dimensions
+```bash
+composer require lemukarram/vector-search
+```
 
-Before you start, you must understand **Dimensions**. Different AI models output vectors of different sizes. Your Vector Database Index **must** match the dimension size of your chosen AI Model.
+Publish the configuration file:
 
-| AI Provider | Model Name | Dimension Size |
+```bash
+php artisan vendor:publish --tag="vector-search-config"
+```
+
+---
+
+## ⚙️ Configuration (.env Guide)
+
+This package is highly flexible, supporting 3 LLMs and 3 Vector Databases. Choose your combination below:
+
+### 1. Select Your Vector Store
+
+| Store | Driver | Recommended For |
 | :--- | :--- | :--- |
-| **OpenAI** | `text-embedding-3-small` | **1536** |
-| **Gemini** | `gemini-embedding-001` | **768** |
-| **DeepSeek** | `deepseek-embedder` | **1024** (Check docs) |
+| **Upstash** | `upstash` | Serverless, zero-config, great free tier. |
+| **ChromaDB** | `chroma` | Open-source, self-hosted, local development. |
+| **Pinecone** | `pinecone` | Best-in-class performance for production. |
 
-**Crucial:** If you create an Upstash index with 1536 dimensions for OpenAI, and then switch your `.env` to use Gemini (768), **it will fail**. You must create a separate index for each model type.
+```dotenv
+VECTOR_STORE=upstash # or chroma, pinecone
+```
 
-## Installation
+### 2. Select Your AI Models (LLMs)
 
-1.  **Install via Composer**
-    ```bash
-    composer require lemukarram/vector-search
-    ```
-    *(Note: If installing from a local path during development, add the repository to your composer.json first).*
+| Provider | Driver | Best For |
+| :--- | :--- | :--- |
+| **OpenAI** | `openai` | Industry standard (GPT-5 support). |
+| **Google** | `gemini` | Best price-to-performance (Gemini 3.1 Flash-Lite). |
+| **DeepSeek** | `deepseek` | Specialized coding and reasoning tasks. |
 
-2.  **Publish the Config File**
-    ```bash
-    php artisan vendor:publish --tag="vector-search-config"
-    ```
+```dotenv
+VECTOR_EMBEDDING_MODEL=openai # or gemini, deepseek
+VECTOR_CHAT_MODEL=openai      # or gemini, deepseek
+```
 
-3.  **Add Environment Variables**
-    Add your chosen driver keys to your `.env` file.
+### 3. Connection Details
 
-    **Option A: Using OpenAI (1536 Dimensions)**
-    ```dotenv
-    VECTOR_STORE=upstash
-    UPSTASH_VECTOR_URL=[https://your-openai-index.upstash.io](https://your-openai-index.upstash.io)
-    UPSTASH_VECTOR_TOKEN=your_token
+Depending on your choices, add the relevant keys:
 
-    VECTOR_EMBEDDING_MODEL=openai
-    VECTOR_CHAT_MODEL=openai
-    OPENAI_API_KEY=sk-...
-    ```
+```dotenv
+# --- OpenAI Keys ---
+OPENAI_API_KEY=sk-...
 
-    **Option B: Using Google Gemini (768 Dimensions)**
-    ```dotenv
-    VECTOR_STORE=upstash
-    # Make sure this Upstash Index was created with 768 dimensions!
-    UPSTASH_VECTOR_URL=[https://your-gemini-index.upstash.io](https://your-gemini-index.upstash.io)
-    UPSTASH_VECTOR_TOKEN=your_token
+# --- Gemini Keys ---
+GEMINI_API_KEY=AIza...
 
-    VECTOR_EMBEDDING_MODEL=gemini
-    VECTOR_CHAT_MODEL=gemini
-    GEMINI_API_KEY=AIza...
-    ```
+# --- DeepSeek Keys ---
+DEEPSEEK_API_KEY=ds-...
 
-## How to Use
+# --- Upstash Vector ---
+UPSTASH_VECTOR_URL=https://...
+UPSTASH_VECTOR_TOKEN=...
 
-### Step 1: "Teach" Your Models
+# --- ChromaDB ---
+CHROMA_HOST=127.0.0.1
+CHROMA_PORT=8000
 
-Add the `VectorSearchable` trait to any Eloquent model and define the `getVectorColumns()` method.
+# --- Pinecone ---
+PINECONE_API_KEY=...
+PINECONE_HOST=https://...
+```
+
+---
+
+## 📖 Usage Guide
+
+### Step 1: Prepare Your Model
+Add the `VectorSearchable` trait and define which columns should be "remembered" by the AI.
 
 ```php
-<?php
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
 use LeMukarram\VectorSearch\Traits\VectorSearchable;
 
-class Post extends Model
+class Product extends Model
 {
     use VectorSearchable;
 
-    /**
-     * Tell the AI which columns to read from this model.
-     */
     public function getVectorColumns(): array
     {
-        // These columns will be combined, vectorized, and stored
-        return ['title', 'slug', 'content', 'category'];
+        return ['name', 'description', 'category', 'features'];
     }
 }
-````
+```
 
-That's it\! Now, every time you create or update a `Post`, it will be automatically "taught" to your AI.
-
-To sync all your existing posts manually, you can run this in `php artisan tinker`:
+### Step 2: Semantic Similarity Search
+Find products that are conceptually similar to a query, even if keywords don't match.
 
 ```php
-\App\Models\Post::all()->each->save();
+$products = VectorSearch::similar('a comfortable chair for gaming', 5);
+// Returns an Eloquent Collection of Product models.
 ```
 
-### Step 2: Use the `VectorSearch` Facade
-
-You now have two powerful methods available anywhere in your app.
-
-#### A) Semantic Search (`::similar`)
-
-Find the most relevant *Eloquent models* for a search query.
+### Step 3: AI Chat with RAG
+Ask a question and get an answer based *only* on your database data.
 
 ```php
-use LeMukarram\VectorSearch\Facades\VectorSearch;
-
-Route::get('/search', function (Request $request) {
-    $query = $request->input('q', 'how to use laravel');
-    
-    // This returns a real Eloquent Collection of Post models!
-    $posts = VectorSearch::similar($query, 5);
-
-    return view('search-results', ['posts' => $posts]);
-});
+$answer = VectorSearch::chat('Which gaming chair has the best lumbar support?');
+echo $answer;
 ```
 
-#### B) AI Chat (`::chat`)
+---
 
-Get a direct, AI-generated answer based *only* on your database content (RAG).
+## 💡 Use Cases
 
-```php
-use LeMukarram\VectorSearch\Facades\VectorSearch;
+- **E-commerce:** "Help me find a gift for a 10-year-old who loves space."
+- **SaaS Docs:** "How do I reset my API key using the CLI?"
+- **Support Bots:** "What is your refund policy for international orders?"
+- **Knowledge Bases:** "Summarize our internal policy on remote work."
 
-Route::get('/ask', function (Request $request) {
-    $question = $request->input('q', 'How do I install this package?');
-    
-    // 1. Searches your database for context
-    // 2. Sends context + question to LLM
-    // 3. Returns the answer
-    $answer = VectorSearch::chat($question);
+---
 
-    return view('chat-answer', ['answer' => $answer]);
-});
+## 🧪 Testing & Quality
+
+We maintain high standards through rigorous testing.
+
+Run the test suite:
+```bash
+vendor/bin/phpunit
 ```
 
-## Extending The Package
+Our CI/CD pipeline ensures compatibility across:
+- **PHP Versions:** 8.1, 8.2, 8.3
+- **Laravel Versions:** 9.x, 10.x, 11.x
 
-You can easily add your own drivers (e.g., for `Qdrant` or a custom LLM) in your `AppServiceProvider`.
+---
 
-```php
-use LeMukarram\VectorSearch\Facades\VectorSearch;
-use App\MyDrivers\QdrantDriver;
+## 🤝 Contribution Guide
 
-public function boot()
-{
-    // Add a custom vector store
-    VectorSearch::store()->extend('qdrant', function ($app, $config) {
-        return new QdrantDriver($config);
-    });
-}
-```
+We love contributions! Whether it's a bug fix, a new driver, or better docs.
 
-## License
+1.  **Fork** the repo and create your branch.
+2.  **Test** your changes thoroughly.
+3.  **Submit** a PR with a clear description.
+4.  Check out our [Contributing Guide](CONTRIBUTING.md) for more details.
 
-The MIT License (MIT).
+---
 
-```
-```
+## 👨‍💻 About the Author
+
+**Mukarram Hussain** is the founder of **Tech with muk**, a platform dedicated to teaching modern web development and AI integration. Mukarram is a passionate Laravel developer and open-source advocate focused on making complex AI technologies accessible to everyone.
+
+- 🌐 **Website:** [techwithmuk.com](https://techwithmuk.com)
+- 🐦 **Twitter:** [@lemukarram](https://twitter.com/lemukarram)
+- 📺 **YouTube:** [Tech with muk](https://youtube.com/c/techwithmuk)
+
+---
+
+## 📄 License
+
+The MIT License (MIT). Please see [License File](LICENSE) for more information.

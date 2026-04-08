@@ -3,6 +3,7 @@
 namespace LeMukarram\VectorSearch;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use LeMukarram\VectorSearch\Core\AiModelManager;
 use LeMukarram\VectorSearch\Core\VectorStoreManager;
 
@@ -38,8 +39,13 @@ class VectorSearch
      */
     public function similar(string $query, int $topK = 3): Collection
     {
-        // 1. Get embedding for the query
-        $vector = $this->ai->embeddingDriver()->embed($query);
+        $ttl = config('vector-search.cache_ttl');
+        $cacheKey = 'vector_search_embed_' . md5($query);
+
+        // 1. Get embedding for the query (Cached)
+        $vector = $ttl 
+            ? Cache::remember($cacheKey, $ttl, fn () => $this->ai->embeddingDriver()->embed($query))
+            : $this->ai->embeddingDriver()->embed($query);
 
         // 2. Query the vector database
         $results = $this->store->store()->query($vector, $topK);
@@ -53,6 +59,13 @@ class VectorSearch
      */
     public function chat(string $query): string
     {
+        $ttl = config('vector-search.cache_ttl');
+        $cacheKey = 'vector_search_chat_' . md5($query);
+
+        if ($ttl && Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
         // 1. Get relevant models
         $models = $this->similar($query, 3);
 
@@ -63,7 +76,13 @@ class VectorSearch
         }
 
         // 3. Ask the AI
-        return $this->ai->chatDriver()->chat($query, $context);
+        $response = $this->ai->chatDriver()->chat($query, $context);
+
+        if ($ttl) {
+            Cache::put($cacheKey, $response, $ttl);
+        }
+
+        return $response;
     }
 
     /**

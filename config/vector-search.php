@@ -26,6 +26,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Caching
+    |--------------------------------------------------------------------------
+    | Specify how long (in seconds) embeddings and chat results should be cached.
+    | Set to 0 or null to disable caching.
+    */
+    'cache_ttl' => env('VECTOR_CACHE_TTL', 3600), // 1 hour
+
+    /*
+    |--------------------------------------------------------------------------
     | Vector Store Connections
     |--------------------------------------------------------------------------
     | Configure your vector database drivers here.
@@ -65,13 +74,13 @@ return [
             'driver'          => 'openai',
             'api_key'         => env('OPENAI_API_KEY'),
             'embedding_model' => 'text-embedding-3-small',
-            'chat_model'      => 'gpt-4o-mini',
+            'chat_model'      => 'gpt-5',
         ],
         'gemini' => [
             'driver'          => 'gemini',
             'api_key'         => env('GEMINI_API_KEY'),
-            'embedding_model' => 'gemini-embedding-001',
-            'chat_model'      => 'gemini-2.5-flash',
+            'embedding_model' => 'text-embedding-004',
+            'chat_model'      => 'gemini-3.1-flash-lite',
         ],
         'deepseek' => [
             'driver'          => 'deepseek',

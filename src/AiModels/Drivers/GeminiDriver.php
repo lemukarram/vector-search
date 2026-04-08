@@ -17,6 +17,7 @@ class GeminiDriver implements AiChatDriver, AiEmbeddingDriver
         $this->config = $config;
         $this->client = new Client([
             'headers' => [
+                'x-goog-api-key' => $this->config['api_key'],
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],
@@ -26,7 +27,7 @@ class GeminiDriver implements AiChatDriver, AiEmbeddingDriver
 
     public function embed(string $text): array
     {
-        $url = $this->baseUrl . $this->config['embedding_model'] . ':embedContent?key=' . $this->config['api_key'];
+        $url = $this->baseUrl . $this->config['embedding_model'] . ':embedContent';
         $response = $this->client->post($url, [
             'json' => [
                 'content' => [
@@ -41,14 +42,18 @@ class GeminiDriver implements AiChatDriver, AiEmbeddingDriver
 
     public function chat(string $prompt, string $context): string
     {
-        $url = $this->baseUrl . $this->config['chat_model'] . ':generateContent?key=' . $this->config['api_key'];
-        $fullPrompt = "You are a helpful assistant. Answer the user's question based ONLY on the following context:\n\nContext:\n{$context}\n\nUser Question:\n{$prompt}";
-
+        $url = $this->baseUrl . $this->config['chat_model'] . ':generateContent';
+        
         $response = $this->client->post($url, [
             'json' => [
+                'systemInstruction' => [
+                    'parts' => [
+                        ['text' => "You are a helpful assistant. Answer the user's question based ONLY on the following context:\n\nContext:\n{$context}"]
+                    ]
+                ],
                 'contents' => [
                     [
-                        'parts' => [['text' => $fullPrompt]]
+                        'parts' => [['text' => $prompt]]
                     ]
                 ]
             ],
