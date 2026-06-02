@@ -1,6 +1,6 @@
 {
-    "name": "lemukarram/vector-search",
-    "description": "A powerful, driver-based RAG (Retrieval-Augmented Generation) package for Laravel. Automatically sync Eloquent models to a vector database and get AI-powered answers.",
+    "name": "lemukarram/laravel-vector-rag",
+    "description": "Enterprise-grade RAG (Retrieval-Augmented Generation) for Laravel. Sync Eloquent models with Next-Gen LLMs (GPT-5.5, Gemini 2.5, Claude 4.6) and Vector Databases.",
     "type": "library",
     "license": "MIT",
     "authors": [
