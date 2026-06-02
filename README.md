@@ -1,157 +1,137 @@
-# Laravel Vector RAG 🚀
+# Laravel AI RAG 🧠🚀
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/lemukarram/laravel-vector-rag.svg?style=flat-square)](https://packagist.org/packages/lemukarram/laravel-vector-rag)
-[![Total Downloads](https://img.shields.io/packagist/dt/lemukarram/laravel-vector-rag.svg?style=flat-square)](https://packagist.org/packages/lemukarram/laravel-vector-rag)
-[![License](https://img.shields.io/packagist/l/lemukarram/laravel-vector-rag.svg?style=flat-square)](https://packagist.org/packages/lemukarram/laravel-vector-rag)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/lemukarram/laravel-ai-rag.svg?style=flat-square)](https://packagist.org/packages/lemukarram/laravel-ai-rag)
+[![Total Downloads](https://img.shields.io/packagist/dt/lemukarram/laravel-ai-rag.svg?style=flat-square)](https://packagist.org/packages/lemukarram/laravel-ai-rag)
+[![GitHub Stars](https://img.shields.io/github/stars/lemukarram/vector-search.svg?style=flat-square)](https://github.com/lemukarram/vector-search)
 
-**Laravel Vector RAG** is an enterprise-grade Retrieval-Augmented Generation (RAG) package. It allows you to seamlessly synchronize your Eloquent models with cutting-edge vector databases and query them using next-gen LLMs like **GPT-5.5**, **Gemini 2.5**, and **Claude 4.6**.
+**Laravel AI RAG** is the most powerful, developer-friendly **Retrieval-Augmented Generation (RAG)** package for the Laravel ecosystem. Transform your standard Eloquent models into high-performance, AI-aware data sources in seconds.
 
-Build AI-powered search, recommendation engines, and context-aware chatbots in minutes.
-
----
-
-## 🔥 Key Features
-
-- **Next-Gen LLM Support**: Native drivers for GPT-5.5, Gemini 2.5, Claude 4.6, and DeepSeek V4.
-- **Advanced Retrieval**: Hybrid Search, Multi-Query Expansion, and Reciprocal Rank Fusion (RRF).
-- **Smart Chunking**: Recursive character text splitting for high-density context.
-- **Auto-Sync**: Automatically keep your vector store updated with Eloquent events.
-- **Metadata Filtering**: Query precisely using model attributes.
-- **Developer First**: Clean Facade API, Mockable Testing Suite (`VectorSearch::fake()`), and extensible drivers.
+Whether you're building an **AI Chatbot**, **Semantic Search Engine**, or **Intelligent Recommendation System**, this package provides the enterprise-grade foundation you need.
 
 ---
 
-## 📦 Installation
+## 💎 Why Laravel AI RAG?
+
+Stop fighting with complex AI APIs. We provide a clean, driver-based abstraction that lets you swap LLMs and Vector Databases with a single line of code.
+
+### 🌟 Elite Features
+- **Next-Gen Model Support**: Native integration with **OpenAI GPT-5.5**, **Google Gemini 2.5**, **Anthropic Claude 4.6**, and **DeepSeek V4**.
+- **Advanced RAG Techniques**: 
+    - **Hybrid Search**: Combines vector similarity with traditional full-text search.
+    - **Recursive Chunking**: Automatically splits large documents for perfect context density.
+    - **Multi-Query Expansion**: Uses AI to rephrase user queries, ensuring the most relevant context is found.
+- **Enterprise Reliability**:
+    - **Metadata Filtering**: Advanced `WHERE` clauses for your vector queries.
+    - **Smart Caching**: Drastically reduce API costs with built-in embedding and chat caching.
+    - **Batch Processing**: High-efficiency background jobs for syncing millions of records.
+- **Perfect Developer Experience**:
+    - **Eloquent Trait**: Just use `VectorSearchable` and you're done.
+    - **Mockable Testing**: Use `VectorSearch::fake()` to test your AI features without spending a cent.
+
+---
+
+## 📦 Rapid Installation
 
 ```bash
-composer require lemukarram/laravel-vector-rag
+composer require lemukarram/laravel-ai-rag
 ```
 
-Publish the configuration file:
-
+Publish and migrate (if applicable):
 ```bash
 php artisan vendor:publish --provider="LeMukarram\VectorSearch\VectorSearchServiceProvider"
 ```
 
 ---
 
-## ⚙️ Configuration
+## 🛠️ Configuration & Supported Drivers
 
-### 1. Vector Databases
-Configure your preferred vector store in `config/vector-search.php`.
+### 🧠 LLM Providers (Chat & Embeddings)
+| Provider | Supported Models |
+|----------|------------------|
+| **OpenAI** | GPT-5.5 (Frontier), GPT-4o, o1-preview |
+| **Google** | Gemini 2.5 Pro, Gemini 1.5 Flash |
+| **Anthropic** | Claude 4.6 Sonnet, Claude 3.5 Opus |
+| **DeepSeek** | DeepSeek V4 Flash, DeepSeek Reasoner |
 
-| Store | Driver | Features |
-|-------|--------|----------|
-| **Upstash** | `upstash` | Serverless, Metadata Filtering |
-| **Pinecone** | `pinecone` | High Performance, Hybrid Search |
-| **ChromaDB** | `chroma` | Open Source, Self-Hosted |
-
-```php
-'stores' => [
-    'upstash' => [
-        'driver' => 'upstash',
-        'url'    => env('UPSTASH_VECTOR_URL'),
-        'token'  => env('UPSTASH_VECTOR_TOKEN'),
-    ],
-    // ... other stores
-],
-```
-
-### 2. Next-Gen AI Models
-Support for the frontier of AI.
-
-```php
-'models' => [
-    'openai' => [
-        'driver'          => 'openai',
-        'api_key'         => env('OPENAI_API_KEY'),
-        'chat_model'      => 'gpt-5.5', // Frontier Model
-        'embedding_model' => 'text-embedding-3-large',
-    ],
-    'gemini' => [
-        'driver'          => 'gemini',
-        'api_key'         => env('GEMINI_API_KEY'),
-        'chat_model'      => 'gemini-2.5-flash',
-        'embedding_model' => 'text-embedding-004',
-    ],
-    'anthropic' => [
-        'driver'     => 'anthropic',
-        'api_key'    => env('ANTHROPIC_API_KEY'),
-        'chat_model' => 'claude-sonnet-4-6',
-    ],
-],
-```
+### 📂 Vector Databases
+| Driver | Best For |
+|--------|----------|
+| **Upstash** | Serverless, zero-config, low latency |
+| **Pinecone** | Massive scale, production-grade performance |
+| **ChromaDB** | Local development and self-hosted privacy |
 
 ---
 
-## 🚀 Usage
+## 💻 Pro Usage
 
-### Prepare Your Model
-Add the `VectorSearchable` trait and define which columns to index.
-
+### Step 1: Make Your Model AI-Searchable
 ```php
 use LeMukarram\VectorSearch\Traits\VectorSearchable;
 
-class Post extends Model
+class Documentation extends Model
 {
     use VectorSearchable;
 
+    /**
+     * Define which columns should be vectorized for AI search.
+     */
     public function getVectorColumns(): array
     {
-        return ['title', 'content', 'category'];
+        return ['title', 'content', 'tags', 'version'];
     }
 }
 ```
 
-### Search & RAG Chat
+### Step 2: Advanced Semantic Search
 ```php
 use LeMukarram\VectorSearch\Facades\VectorSearch;
 
-// 1. Simple Semantic Search
-$posts = VectorSearch::similar('How to build AI apps?', topK: 5);
-
-// 2. Filtered Search
-$posts = VectorSearch::whereMetadata('category', 'tech')
-    ->similar('RAG implementation', 3);
-
-// 3. AI-Powered RAG Chat
-$response = VectorSearch::chat('Explain the benefits of this package.');
-echo $response->content();
-echo $response->usage()['total_tokens']; // Track usage!
-
-// 4. Multi-Query Expansion
-$results = VectorSearch::multiQuery('Best vector DB for Laravel');
+// Perform high-accuracy semantic search
+$docs = VectorSearch::similar('How do I scale my Laravel API?', topK: 5);
 ```
 
-### Per-Request Overrides
-Switch models or stores on the fly:
+### Step 3: RAG Chat (AI Answers from Data)
 ```php
-$response = VectorSearch::withModel('anthropic')
-    ->withStore('pinecone')
-    ->chat('Use Claude for this specific answer.');
+// The AI will answer ONLY based on your database content
+$answer = VectorSearch::chat('What are our server requirements?');
+
+echo $answer->content();
+echo "Tokens used: " . $answer->usage()['total_tokens'];
+```
+
+### Step 4: Pro-Level Filtering & Overrides
+```php
+$answer = VectorSearch::whereMetadata('version', 'v2')
+    ->withModel('anthropic') // Swap to Claude on the fly
+    ->chat('What is new in v2?');
 ```
 
 ---
 
-## 🧪 Testing
-We make testing easy. Don't waste credits during CI.
+## 🧪 Bulletproof Testing
+Test your AI features reliably in CI/CD:
 
 ```php
 public function test_ai_feature()
 {
     $fake = VectorSearch::fake();
-    $fake->pushChatResponse('This is a fake answer');
+    $fake->pushChatResponse('Mocked AI Answer');
 
-    $response = VectorSearch::chat('hello');
+    $response = VectorSearch::chat('test query');
     
-    $this->assertEquals('This is a fake answer', $response->content());
+    $this->assertEquals('Mocked AI Answer', $response->content());
 }
 ```
 
 ---
 
-## 🤝 Contributing
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+## 📈 Search Performance & SEO Tips
+Keywords: *Laravel AI, Vector Search Laravel, RAG Laravel, GPT-5 Laravel, Gemini AI Laravel, PHP AI Package, Semantic Search PHP, Pinecone Laravel, Upstash Vector Laravel.*
+
+---
+
+## 🤝 Contributing & Support
+If you love this package, please give it a ⭐ on GitHub! 
 
 ## 📄 License
-The MIT License (MIT). Please see [LICENSE.md](LICENSE.md) for more information.
+The MIT License (MIT). See [LICENSE.md](LICENSE.md).
