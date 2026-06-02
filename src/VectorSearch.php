@@ -47,8 +47,32 @@ class VectorSearch
     }
 
     /**
-     * Find the most similar Eloquent models for a query.
+     * Use LLM to expand a single query into multiple variations for better retrieval.
      */
+    public function multiQuery(string $query, int $count = 3): Collection
+    {
+        $prompt = "Generate {$count} different variations of the following user query to help find more relevant documents in a vector database. Output only the variations, one per line.\n\nQuery: {$query}";
+        
+        $response = $this->ai->chatDriver()->chat($prompt, "You are a search expert.");
+        $variations = array_filter(explode("\n", $response->content()));
+        
+        $allResults = collect();
+        foreach (array_merge([$query], $variations) as $q) {
+            $allResults = $allResults->merge($this->similar($q, 3));
+        }
+
+        return $allResults->unique(fn($m) => get_class($m) . ':' . $m->getKey());
+    }
+
+    /**
+     * Perform Hybrid Search (Vector + Full-text).
+     */
+    public function hybrid(string $query, int $topK = 5): Collection
+    {
+        // This is a placeholder for a more complex RRF implementation.
+        // Modern vector stores like Pinecone/Upstash support this natively via query parameters.
+        return $this->similar($query, $topK);
+    }
     public function similar(string $query, int $topK = 3): Collection
     {
         $ttl = config('vector-search.cache_ttl');
@@ -111,29 +135,44 @@ class VectorSearch
     }
 
     /**
-     * Turn vector DB results into an Eloquent Collection.
+     * Turn vector DB results into an Eloquent Collection, preserving relevance order.
      */
     protected function hydrateModels(array $results): Collection
     {
-        $models = new Collection();
-        $modelsById = [];
+        $orderedIds = [];
+        $modelsByClass = [];
 
-        // Group by model class to query efficiently
         foreach ($results as $result) {
             $metadata = $result['metadata'];
             if (isset($metadata['model_class']) && isset($metadata['model_id'])) {
-                $modelsById[$metadata['model_class']][] = $metadata['model_id'];
+                $class = $metadata['model_class'];
+                $id = $metadata['model_id'];
+                
+                $orderedIds[] = ['class' => $class, 'id' => $id];
+                $modelsByClass[$class][] = $id;
             }
         }
 
-        // Eager load models
-        foreach ($modelsById as $class => $ids) {
+        $fetchedModels = [];
+        foreach ($modelsByClass as $class => $ids) {
             if (class_exists($class)) {
-                $models = $models->merge($class::findMany($ids));
+                // Use findMany and key by ID for fast lookup
+                $models = $class::findMany($ids)->keyBy(fn($m) => $m->getKey());
+                $fetchedModels[$class] = $models;
             }
         }
 
-        return $models;
+        $collection = new Collection();
+        foreach ($orderedIds as $item) {
+            $class = $item['class'];
+            $id = $item['id'];
+            
+            if (isset($fetchedModels[$class][$id])) {
+                $collection->push($fetchedModels[$class][$id]);
+            }
+        }
+
+        return $collection->unique(fn($m) => get_class($m) . ':' . $m->getKey());
     }
 
     /**
