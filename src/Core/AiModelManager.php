@@ -53,16 +53,18 @@ class AiModelManager
     protected function resolve(string $name): AiModel
     {
         $config = $this->getConfig($name);
-        if (isset($this->customCreators[$name])) {
-            return $this->callCustomCreator($name, $config);
+        $driverName = $config['driver'] ?? $name;
+
+        if (isset($this->customCreators[$driverName])) {
+            return $this->callCustomCreator($driverName, $config);
         }
 
-        $method = 'create' . ucfirst(strtolower($name)) . 'Driver';
+        $method = 'create' . ucfirst(strtolower($driverName)) . 'Driver';
         if (method_exists($this, $method)) {
             return $this->{$method}($config);
         }
 
-        throw new InvalidArgumentException("AI model driver [{$name}] not supported.");
+        throw new InvalidArgumentException("AI model driver [{$driverName}] not supported.");
     }
 
     protected function callCustomCreator(string $name, array $config): AiModel

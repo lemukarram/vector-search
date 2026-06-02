@@ -24,6 +24,11 @@
             "LeMukarram\\VectorSearch\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "LeMukarram\\VectorSearch\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [

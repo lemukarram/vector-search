@@ -7,6 +7,7 @@ use LeMukarram\VectorSearch\Contracts\AiChatDriver;
 use LeMukarram\VectorSearch\Contracts\AiEmbeddingDriver;
 use LeMukarram\VectorSearch\Contracts\VectorStoreDriver;
 use LeMukarram\VectorSearch\Core\AiModelManager;
+use LeMukarram\VectorSearch\Core\AiResponse;
 use LeMukarram\VectorSearch\Core\VectorStoreManager;
 use LeMukarram\VectorSearch\Facades\VectorSearch;
 use LeMukarram\VectorSearch\Tests\TestCase;
@@ -18,6 +19,9 @@ class VectorSearchTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+        
+        config(['vector-search.models.mock_model' => ['driver' => 'mock']]);
+        config(['vector-search.stores.mock_store' => ['driver' => 'mock']]);
     }
 
     public function test_similar_method_uses_caching()
@@ -30,21 +34,17 @@ class VectorSearchTest extends TestCase
 
         $mockStore = Mockery::mock(VectorStoreDriver::class);
         $mockStore->shouldReceive('query')
-            ->twice() // Called twice but embed only once due to cache
+            ->twice()
             ->andReturn([]);
 
-        // Register mocks in managers
-        app(AiModelManager::class)->extend('mock_model', function() use ($mockEmbedding) {
+        app(AiModelManager::class)->extend('mock', function() use ($mockEmbedding) {
             return new \LeMukarram\VectorSearch\AiModels\AiModel($mockEmbedding, Mockery::mock(AiChatDriver::class));
         });
-        app(VectorStoreManager::class)->extend('mock_store', function() use ($mockStore) {
+        app(VectorStoreManager::class)->extend('mock', function() use ($mockStore) {
             return $mockStore;
         });
 
-        // First call - should trigger embed
         VectorSearch::similar('test query');
-
-        // Second call - should use cached embedding
         VectorSearch::similar('test query');
     }
 
@@ -56,25 +56,22 @@ class VectorSearchTest extends TestCase
         $mockChat = Mockery::mock(AiChatDriver::class);
         $mockChat->shouldReceive('chat')
             ->once()
-            ->andReturn('cached response');
+            ->andReturn(new AiResponse('cached response'));
 
         $mockStore = Mockery::mock(VectorStoreDriver::class);
         $mockStore->shouldReceive('query')->once()->andReturn([]);
 
-        app(AiModelManager::class)->extend('mock_model', function() use ($mockEmbedding, $mockChat) {
+        app(AiModelManager::class)->extend('mock', function() use ($mockEmbedding, $mockChat) {
             return new \LeMukarram\VectorSearch\AiModels\AiModel($mockEmbedding, $mockChat);
         });
-        app(VectorStoreManager::class)->extend('mock_store', function() {
-            return Mockery::mock(VectorStoreDriver::class, ['query' => []]);
+        app(VectorStoreManager::class)->extend('mock', function() use ($mockStore) {
+            return $mockStore;
         });
 
-        // First call - triggers all
         $response1 = VectorSearch::chat('hello');
-        
-        // Second call - should be fully cached
         $response2 = VectorSearch::chat('hello');
 
-        $this->assertEquals('cached response', $response1);
-        $this->assertEquals('cached response', $response2);
+        $this->assertEquals('cached response', $response1->content());
+        $this->assertEquals('cached response', $response2->content());
     }
 }

@@ -26,6 +26,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | RAG Configuration
+    |--------------------------------------------------------------------------
+    */
+    'rag' => [
+        'system_prompt' => "You are a helpful assistant. Answer the user's question based ONLY on the following context:\n\nContext:\n{{context}}",
+        'no_context_message' => "No relevant context found.",
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Caching
     |--------------------------------------------------------------------------
     | Specify how long (in seconds) embeddings and chat results should be cached.

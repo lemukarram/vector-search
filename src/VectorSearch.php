@@ -5,6 +5,7 @@ namespace LeMukarram\VectorSearch;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use LeMukarram\VectorSearch\Core\AiModelManager;
+use LeMukarram\VectorSearch\Core\AiResponse;
 use LeMukarram\VectorSearch\Core\VectorStoreManager;
 
 /**
@@ -57,7 +58,7 @@ class VectorSearch
     /**
      * Get a direct chat response using RAG.
      */
-    public function chat(string $query): string
+    public function chat(string $query): AiResponse
     {
         $ttl = config('vector-search.cache_ttl');
         $cacheKey = 'vector_search_chat_' . md5($query);
@@ -71,12 +72,22 @@ class VectorSearch
 
         // 2. Build the context string
         $context = $this->buildContextFromModels($models);
+        
+        $systemPrompt = config('vector-search.rag.system_prompt');
+        
         if (empty($context)) {
-            $context = "No relevant context found.";
+            $context = config('vector-search.rag.no_context_message', 'No relevant context found.');
         }
 
-        // 3. Ask the AI
-        $response = $this->ai->chatDriver()->chat($query, $context);
+        // 3. Prepare the prompt (Replace placeholders)
+        $finalPrompt = str_replace(
+            ['{{context}}', '{{query}}'],
+            [$context, $query],
+            $systemPrompt
+        );
+
+        // 4. Ask the AI
+        $response = $this->ai->chatDriver()->chat($query, $finalPrompt);
 
         if ($ttl) {
             Cache::put($cacheKey, $response, $ttl);

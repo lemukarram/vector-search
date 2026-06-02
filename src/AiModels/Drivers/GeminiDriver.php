@@ -2,63 +2,84 @@
 
 namespace LeMukarram\VectorSearch\AiModels\Drivers;
 
-use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
 use LeMukarram\VectorSearch\Contracts\AiChatDriver;
 use LeMukarram\VectorSearch\Contracts\AiEmbeddingDriver;
+use LeMukarram\VectorSearch\Core\AiResponse;
+use LeMukarram\VectorSearch\Exceptions\VectorSearchException;
 
 class GeminiDriver implements AiChatDriver, AiEmbeddingDriver
 {
-    protected Client $client;
     protected array $config;
     protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->client = new Client([
-            'headers' => [
-                'x-goog-api-key' => $this->config['api_key'],
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ],
-            'timeout' => 30,
+    }
+
+    protected function client()
+    {
+        return Http::withHeaders([
+            'x-goog-api-key' => $this->config['api_key'],
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
         ]);
     }
 
     public function embed(string $text): array
     {
         $url = $this->baseUrl . $this->config['embedding_model'] . ':embedContent';
-        $response = $this->client->post($url, [
-            'json' => [
-                'content' => [
-                    'parts' => [['text' => $text]]
-                ],
-                'outputDimensionality' => 768,
+        
+        $response = $this->client()->post($url, [
+            'content' => [
+                'parts' => [['text' => $text]]
             ],
+            'outputDimensionality' => 768,
         ]);
-        $data = json_decode($response->getBody()->getContents(), true);
+
+        if ($response->failed()) {
+            throw VectorSearchException::apiError('Gemini', $response->body(), $response->status());
+        }
+
+        $data = $response->json();
         return $data['embedding']['values'];
     }
 
-    public function chat(string $prompt, string $context): string
+    public function chat(string $prompt, string $systemMessage = ''): AiResponse
     {
         $url = $this->baseUrl . $this->config['chat_model'] . ':generateContent';
         
-        $response = $this->client->post($url, [
-            'json' => [
-                'systemInstruction' => [
-                    'parts' => [
-                        ['text' => "You are a helpful assistant. Answer the user's question based ONLY on the following context:\n\nContext:\n{$context}"]
-                    ]
-                ],
-                'contents' => [
-                    [
-                        'parts' => [['text' => $prompt]]
-                    ]
+        $payload = [
+            'contents' => [
+                [
+                    'parts' => [['text' => $prompt]]
                 ]
-            ],
-        ]);
-        $data = json_decode($response->getBody()->getContents(), true);
-        return $data['candidates'][0]['content']['parts'][0]['text'];
+            ]
+        ];
+
+        if ($systemMessage) {
+            $payload['systemInstruction'] = [
+                'parts' => [
+                    ['text' => $systemMessage]
+                ]
+            ];
+        }
+
+        $response = $this->client()->post($url, $payload);
+
+        if ($response->failed()) {
+            throw VectorSearchException::apiError('Gemini', $response->body(), $response->status());
+        }
+
+        $data = $response->json();
+        
+        return new AiResponse(
+            $data['candidates'][0]['content']['parts'][0]['text'],
+            [
+                'candidates' => $data['candidates'] ?? [],
+                'usage' => $data['usageMetadata'] ?? [],
+            ]
+        );
     }
 }

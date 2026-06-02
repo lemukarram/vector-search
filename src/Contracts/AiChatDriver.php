@@ -2,14 +2,12 @@
 
 namespace LeMukarram\VectorSearch\Contracts;
 
+use LeMukarram\VectorSearch\Core\AiResponse;
+
 interface AiChatDriver
 {
     /**
-     * Generate a chat response based on a prompt and context.
-     *
-     * @param string $prompt The user's question
-     * @param string $context The retrieved documents
-     * @return string The AI's answer
+     * Generate a chat response.
      */
-    public function chat(string $prompt, string $context): string;
+    public function chat(string $prompt, string $systemMessage = ''): AiResponse;
 }

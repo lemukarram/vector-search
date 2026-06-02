@@ -2,12 +2,12 @@
 
 namespace LeMukarram\VectorSearch\VectorStores\Drivers;
 
-use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
 use LeMukarram\VectorSearch\Contracts\VectorStoreDriver;
+use LeMukarram\VectorSearch\Exceptions\VectorSearchException;
 
 class ChromaDriver implements VectorStoreDriver
 {
-    protected Client $client;
     protected array $config;
     protected string $collection;
 
@@ -15,12 +15,13 @@ class ChromaDriver implements VectorStoreDriver
     {
         $this->config = $config;
         $this->collection = $this->config['collection'] ?? 'laravel-rag';
-        $this->client = new Client([
-            'base_uri' => "http://{$this->config['host']}:{$this->config['port']}/api/v1/",
-            'timeout' => 10,
-            'headers' => ['Content-Type' => 'application/json']
-        ]);
-        // ToDo: Check if collection exists, create if not
+    }
+
+    protected function client()
+    {
+        return Http::withHeaders([
+            'Content-Type' => 'application/json',
+        ])->baseUrl("http://{$this->config['host']}:{$this->config['port']}/api/v1/");
     }
 
     public function upsert(array $vectors): bool
@@ -32,8 +33,13 @@ class ChromaDriver implements VectorStoreDriver
         ];
         
         $url = 'collections/' . $this->collection . '/upsert';
-        $response = $this->client->post($url, ['json' => $payload]);
-        return $response->getStatusCode() === 200;
+        $response = $this->client()->post($url, $payload);
+
+        if ($response->failed()) {
+            throw VectorSearchException::apiError('Chroma', $response->body(), $response->status());
+        }
+
+        return $response->successful();
     }
 
     public function query(array $vector, int $topK, array $filter = []): array
@@ -43,22 +49,22 @@ class ChromaDriver implements VectorStoreDriver
             'n_results' => $topK,
             'include' => ['metadatas', 'distances'],
         ];
-        // ToDo: Chroma filter support
-        // if (!empty($filter)) {
-        //     $payload['where'] = $filter;
-        // }
 
         $url = 'collections/' . $this->collection . '/query';
-        $response = $this->client->post($url, ['json' => $payload]);
-        $data = json_decode($response->getBody()->getContents(), true);
+        $response = $this->client()->post($url, $payload);
 
-        // Transform data to standard format
+        if ($response->failed()) {
+            throw VectorSearchException::apiError('Chroma', $response->body(), $response->status());
+        }
+
+        $data = $response->json();
+
         $results = [];
         if (!empty($data['ids'][0])) {
             foreach ($data['ids'][0] as $index => $id) {
                 $results[] = [
                     'metadata' => $data['metadatas'][0][$index],
-                    'score' => $data['distances'][0][$index], // Chroma uses distance
+                    'score' => $data['distances'][0][$index],
                 ];
             }
         }
@@ -68,7 +74,7 @@ class ChromaDriver implements VectorStoreDriver
     public function delete(array $ids): bool
     {
         $url = 'collections/' . $this->collection . '/delete';
-        $response = $this->client->post($url, ['json' => ['ids' => $ids]]);
-        return $response->getStatusCode() === 200;
+        $response = $this->client()->post($url, ['ids' => $ids]);
+        return $response->successful();
     }
 }

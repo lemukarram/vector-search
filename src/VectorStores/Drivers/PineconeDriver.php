@@ -2,35 +2,40 @@
 
 namespace LeMukarram\VectorSearch\VectorStores\Drivers;
 
-use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
 use LeMukarram\VectorSearch\Contracts\VectorStoreDriver;
+use LeMukarram\VectorSearch\Exceptions\VectorSearchException;
 
 class PineconeDriver implements VectorStoreDriver
 {
-    protected Client $client;
     protected array $config;
 
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->client = new Client([
-            'base_uri' => $this->config['host'],
-            'headers' => [
-                'Api-Key' => $this->config['api_key'],
-                'Content-Type' => 'application/json',
-            ],
-            'timeout' => 10,
-        ]);
+    }
+
+    protected function client()
+    {
+        return Http::withHeaders([
+            'Api-Key' => $this->config['api_key'],
+            'Content-Type' => 'application/json',
+        ])->baseUrl($this->config['host']);
     }
 
     public function upsert(array $vectors): bool
     {
         $payload = [
             'vectors' => array_map(fn($v) => $v->toArray(), $vectors),
-            // 'namespace' => 'optional-namespace'
         ];
-        $response = $this->client->post('vectors/upsert', ['json' => $payload]);
-        return $response->getStatusCode() === 200;
+        
+        $response = $this->client()->post('vectors/upsert', $payload);
+
+        if ($response->failed()) {
+            throw VectorSearchException::apiError('Pinecone', $response->body(), $response->status());
+        }
+
+        return $response->successful();
     }
 
     public function query(array $vector, int $topK, array $filter = []): array
@@ -40,15 +45,15 @@ class PineconeDriver implements VectorStoreDriver
             'topK' => $topK,
             'includeMetadata' => true,
         ];
-        // ToDo: Pinecone filter support
-        // if (!empty($filter)) {
-        //     $payload['filter'] = $filter;
-        // }
 
-        $response = $this->client->post('query', ['json' => $payload]);
-        $data = json_decode($response->getBody()->getContents(), true);
+        $response = $this->client()->post('query', $payload);
+
+        if ($response->failed()) {
+            throw VectorSearchException::apiError('Pinecone', $response->body(), $response->status());
+        }
+
+        $data = $response->json();
         
-        // Transform data to standard format
         return array_map(fn($match) => [
             'metadata' => $match['metadata'],
             'score' => $match['score'],
@@ -57,7 +62,7 @@ class PineconeDriver implements VectorStoreDriver
 
     public function delete(array $ids): bool
     {
-        $response = $this->client->post('vectors/delete', ['json' => ['ids' => $ids]]);
-        return $response->getStatusCode() === 200;
+        $response = $this->client()->post('vectors/delete', ['ids' => $ids]);
+        return $response->successful();
     }
 }
