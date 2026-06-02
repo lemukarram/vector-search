@@ -11,7 +11,7 @@ use LeMukarram\VectorSearch\Exceptions\VectorSearchException;
 class GeminiDriver implements AiChatDriver, AiEmbeddingDriver
 {
     protected array $config;
-    protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/';
+    protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1/models/';
 
     public function __construct(array $config)
     {
@@ -77,8 +77,13 @@ class GeminiDriver implements AiChatDriver, AiEmbeddingDriver
         return new AiResponse(
             $data['candidates'][0]['content']['parts'][0]['text'],
             [
-                'candidates' => $data['candidates'] ?? [],
-                'usage' => $data['usageMetadata'] ?? [],
+                'model' => $this->config['chat_model'],
+                'usage' => [
+                    'prompt_tokens' => $data['usageMetadata']['promptTokenCount'] ?? 0,
+                    'completion_tokens' => $data['usageMetadata']['candidatesTokenCount'] ?? 0,
+                    'total_tokens' => $data['usageMetadata']['totalTokenCount'] ?? 0,
+                ],
+                'finish_reason' => $data['candidates'][0]['finishReason'] ?? null,
             ]
         );
     }

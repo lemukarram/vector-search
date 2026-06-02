@@ -83,20 +83,26 @@ return [
         'openai' => [
             'driver'          => 'openai',
             'api_key'         => env('OPENAI_API_KEY'),
-            'embedding_model' => 'text-embedding-3-small',
-            'chat_model'      => 'gpt-5',
+            'embedding_model' => 'text-embedding-3-large',
+            'chat_model'      => 'gpt-5.5', // Frontier model
         ],
         'gemini' => [
             'driver'          => 'gemini',
             'api_key'         => env('GEMINI_API_KEY'),
             'embedding_model' => 'text-embedding-004',
-            'chat_model'      => 'gemini-3.1-flash-lite',
+            'chat_model'      => 'gemini-2.5-flash',
         ],
         'deepseek' => [
             'driver'          => 'deepseek',
             'api_key'         => env('DEEPSEEK_API_KEY'),
-            'embedding_model' => 'deepseek-embedder-v1', // This may change, check their docs
-            'chat_model'      => 'deepseek-chat',
+            'embedding_model' => 'deepseek-embedder-v1',
+            'chat_model'      => 'deepseek-v4-flash',
+        ],
+        'anthropic' => [
+            'driver'     => 'anthropic',
+            'api_key'    => env('ANTHROPIC_API_KEY'),
+            'chat_model' => 'claude-sonnet-4-6',
+            'version'    => '2023-06-01',
         ],
     ],
 ];

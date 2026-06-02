@@ -5,6 +5,7 @@ namespace LeMukarram\VectorSearch\Core;
 use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
 use LeMukarram\VectorSearch\AiModels\AiModel;
+use LeMukarram\VectorSearch\AiModels\Drivers\AnthropicDriver;
 use LeMukarram\VectorSearch\AiModels\Drivers\DeepSeekDriver;
 use LeMukarram\VectorSearch\AiModels\Drivers\GeminiDriver;
 use LeMukarram\VectorSearch\AiModels\Drivers\OpenAiDriver;
@@ -96,6 +97,12 @@ class AiModelManager
     {
         $driver = new DeepSeekDriver($config);
         return new AiModel(embeddingDriver: $driver, chatDriver: $driver);
+    }
+
+    protected function createAnthropicDriver(array $config): AiModel
+    {
+        $driver = new AnthropicDriver($config);
+        return new AiModel(chatDriver: $driver);
     }
 
     // --- HELPERS ---

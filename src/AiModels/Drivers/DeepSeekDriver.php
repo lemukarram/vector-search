@@ -23,7 +23,7 @@ class DeepSeekDriver implements AiChatDriver, AiEmbeddingDriver
             'Authorization' => 'Bearer ' . $this->config['api_key'],
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ])->baseUrl('https://api.deepseek.com/v1/');
+        ])->baseUrl('https://api.deepseek.com/');
     }
 
     public function embed(string $text): array
@@ -61,7 +61,12 @@ class DeepSeekDriver implements AiChatDriver, AiEmbeddingDriver
             $data['choices'][0]['message']['content'],
             [
                 'model' => $data['model'],
-                'usage' => $data['usage'],
+                'usage' => [
+                    'prompt_tokens' => $data['usage']['prompt_tokens'] ?? 0,
+                    'completion_tokens' => $data['usage']['completion_tokens'] ?? 0,
+                    'total_tokens' => $data['usage']['total_tokens'] ?? 0,
+                ],
+                'finish_reason' => $data['choices'][0]['finish_reason'] ?? null,
             ]
         );
     }
