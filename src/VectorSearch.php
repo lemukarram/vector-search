@@ -14,6 +14,8 @@ use LeMukarram\VectorSearch\Core\VectorStoreManager;
  */
 class VectorSearch
 {
+    protected array $filters = [];
+
     public function __construct(
         protected AiModelManager $ai,
         protected VectorStoreManager $store
@@ -36,6 +38,15 @@ class VectorSearch
     }
 
     /**
+     * Add a metadata filter to the next query.
+     */
+    public function whereMetadata(string $key, mixed $value): self
+    {
+        $this->filters[$key] = $value;
+        return $this;
+    }
+
+    /**
      * Find the most similar Eloquent models for a query.
      */
     public function similar(string $query, int $topK = 3): Collection
@@ -49,7 +60,10 @@ class VectorSearch
             : $this->ai->embeddingDriver()->embed($query);
 
         // 2. Query the vector database
-        $results = $this->store->store()->query($vector, $topK);
+        $results = $this->store->store()->query($vector, $topK, $this->filters);
+
+        // Reset filters after query
+        $this->filters = [];
 
         // 3. Hydrate models
         return $this->hydrateModels($results);

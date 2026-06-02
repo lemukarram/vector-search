@@ -10,27 +10,54 @@ trait VectorSearchable
 {
     /**
      * Boot the trait.
-     * This is the "magic" that listens for Eloquent events.
      */
     public static function bootVectorSearchable(): void
     {
         static::saved(function (Model $model) {
-            // 1. Get text
-            $text = $model->getVectorText();
-            if (empty($text)) return; // Don't sync empty data
-
-            // Dispatch job to handle embedding and upsert
-            SyncVectorStoreJob::dispatch(
-                get_class($model),
-                $model->getKey(),
-                $text,
-                $model->getVectorId()
-            );
+            $model->syncToVectorStore();
         });
 
         static::deleted(function (Model $model) {
-            DeleteVectorStoreJob::dispatch($model->getVectorId());
+            $model->deleteFromVectorStore();
         });
+    }
+
+    public function syncToVectorStore(): void
+    {
+        $text = $this->getVectorText();
+        if (empty($text)) return;
+
+        $metadata = method_exists($this, 'getVectorMetadata') 
+            ? $this->getVectorMetadata() 
+            : [];
+
+        $metadata = array_merge($metadata, [
+            'model_class' => get_class($this),
+            'model_id' => $this->getKey(),
+        ]);
+
+        // Handle Chunking
+        $chunkSize = config('vector-search.rag.chunk_size', 1000);
+        $chunkOverlap = config('vector-search.rag.chunk_overlap', 200);
+
+        $splitter = new \LeMukarram\VectorSearch\Support\RecursiveCharacterTextSplitter($chunkSize, $chunkOverlap);
+        $chunks = $splitter->splitText($text);
+
+        foreach ($chunks as $index => $chunk) {
+            SyncVectorStoreJob::dispatch(
+                get_class($this),
+                $this->getKey(),
+                $chunk,
+                $this->getVectorId() . ':chunk:' . $index,
+                array_merge($metadata, ['chunk_index' => $index])
+            );
+        }
+    }
+
+    public function deleteFromVectorStore(): void
+    {
+        DeleteVectorStoreJob::dispatch($this->getVectorId());
+        // ToDo: Handle deleting all chunks if chunking is used
     }
 
     /**

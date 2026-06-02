@@ -47,6 +47,14 @@ class UpstashDriver implements VectorStoreDriver
             'topK' => $topK,
             'includeMetadata' => true,
         ];
+
+        if (!empty($filter)) {
+            $filterParts = [];
+            foreach ($filter as $key => $value) {
+                $filterParts[] = "$key = " . (is_string($value) ? "'$value'" : $value);
+            }
+            $payload['filter'] = implode(' AND ', $filterParts);
+        }
         
         $response = $this->client()->post('query', $payload);
 

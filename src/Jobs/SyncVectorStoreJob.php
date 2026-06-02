@@ -19,7 +19,8 @@ class SyncVectorStoreJob implements ShouldQueue
         protected string $modelClass,
         protected mixed $modelId,
         protected string $text,
-        protected string $vectorId
+        protected string $vectorId,
+        protected array $metadata = []
     ) {}
 
     public function handle(AiModelManager $ai, VectorStoreManager $store): void
@@ -31,11 +32,11 @@ class SyncVectorStoreJob implements ShouldQueue
         $vector = new Vector(
             id: $this->vectorId,
             values: $embedding,
-            metadata: [
+            metadata: array_merge([
                 'model_class' => $this->modelClass,
                 'model_id' => $this->modelId,
                 'text' => $this->text,
-            ]
+            ], $this->metadata)
         );
 
         // 3. Upsert
