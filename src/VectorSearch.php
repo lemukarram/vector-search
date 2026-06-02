@@ -15,6 +15,8 @@ use LeMukarram\VectorSearch\Core\VectorStoreManager;
 class VectorSearch
 {
     protected array $filters = [];
+    protected ?string $modelOverride = null;
+    protected ?string $storeOverride = null;
 
     public function __construct(
         protected AiModelManager $ai,
@@ -43,6 +45,24 @@ class VectorSearch
     public function whereMetadata(string $key, mixed $value): self
     {
         $this->filters[$key] = $value;
+        return $this;
+    }
+
+    /**
+     * Override the default AI model for the next request.
+     */
+    public function withModel(string $name): self
+    {
+        $this->modelOverride = $name;
+        return $this;
+    }
+
+    /**
+     * Override the default vector store for the next request.
+     */
+    public function withStore(string $name): self
+    {
+        $this->storeOverride = $name;
         return $this;
     }
 
@@ -80,14 +100,16 @@ class VectorSearch
 
         // 1. Get embedding for the query (Cached)
         $vector = $ttl 
-            ? Cache::remember($cacheKey, $ttl, fn () => $this->ai->embeddingDriver()->embed($query))
-            : $this->ai->embeddingDriver()->embed($query);
+            ? Cache::remember($cacheKey, $ttl, fn () => $this->ai->embeddingDriver($this->modelOverride)->embed($query))
+            : $this->ai->embeddingDriver($this->modelOverride)->embed($query);
 
         // 2. Query the vector database
-        $results = $this->store->store()->query($vector, $topK, $this->filters);
+        $results = $this->store->store($this->storeOverride)->query($vector, $topK, $this->filters);
 
-        // Reset filters after query
+        // Reset state after query
         $this->filters = [];
+        $this->modelOverride = null;
+        $this->storeOverride = null;
 
         // 3. Hydrate models
         return $this->hydrateModels($results);
@@ -125,11 +147,14 @@ class VectorSearch
         );
 
         // 4. Ask the AI
-        $response = $this->ai->chatDriver()->chat($query, $finalPrompt);
+        $response = $this->ai->chatDriver($this->modelOverride)->chat($query, $finalPrompt);
 
         if ($ttl) {
             Cache::put($cacheKey, $response, $ttl);
         }
+
+        // Reset state
+        $this->modelOverride = null;
 
         return $response;
     }
